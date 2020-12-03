@@ -17,11 +17,15 @@
 package gif
 
 import (
-	"fmt"
 	"fyne.io/fyne"
+	"fyne.io/fyne/canvas"
 	"github.com/AletheiaWareLLC/perusergo"
 	"github.com/AletheiaWareLLC/perusergo/media"
+	"image"
+	"image/draw"
+	"image/gif"
 	"io"
+	"time"
 )
 
 func init() {
@@ -30,5 +34,41 @@ func init() {
 
 func GIFDecoder(peruser perusergo.Peruser, name string, source io.ReadCloser) (fyne.CanvasObject, error) {
 	defer source.Close()
-	return nil, fmt.Errorf("image/gif not yet implemented")
+	gif, err := gif.DecodeAll(source)
+	if err != nil {
+		return nil, err
+	}
+	size := gif.Image[0].Bounds().Size()
+	overpaintImage := image.NewRGBA(image.Rect(0, 0, size.X, size.Y))
+	output := &canvas.Image{
+		Image:    overpaintImage,
+		FillMode: canvas.ImageFillOriginal,
+	}
+	go func() {
+		draw.Draw(overpaintImage, overpaintImage.Bounds(), gif.Image[0], image.ZP, draw.Src)
+		loop := func() {
+			for c, srcImg := range gif.Image {
+				draw.Draw(overpaintImage, overpaintImage.Bounds(), srcImg, image.ZP, draw.Over)
+				canvas.Refresh(output)
+
+				time.Sleep(time.Millisecond * time.Duration(gif.Delay[c]) * 10)
+			}
+		}
+		switch gif.LoopCount {
+		case 0:
+			// Loop forever
+			for {
+				loop()
+			}
+		case -1:
+			// Loop once
+			loop()
+		default:
+			// Loop LoopCount+1 times
+			for i := 0; i <= gif.LoopCount; i++ {
+				loop()
+			}
+		}
+	}()
+	return output, nil
 }

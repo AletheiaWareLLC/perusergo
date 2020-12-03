@@ -9,6 +9,7 @@ A File & Web Browser written in Go.
 - [3](https://www.merriam-webster.com/dictionary/peruse): to examine or consider with attention and in detail.
 
 ##Supported Media Types:
+- image/gif
 - image/jpeg, image/jpg
 - image/png
 - image/svg, image/svg+xml (partial)
